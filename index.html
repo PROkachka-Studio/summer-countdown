@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Обратный отсчёт до лета</title>
+  <style>
+    :root {
+      --bg-color-light: linear-gradient(120deg, #d4fc79, #96e6a1);
+      --bg-color-dark: linear-gradient(120deg, #232526, #414345);
+      --text-color-light: #333;
+      --text-color-dark: #f0f8ff;
+      --box-color-light: rgba(255, 255, 255, 0.85);
+      --box-color-dark: rgba(40, 40, 40, 0.85);
+      --button-bg-light: #333;
+      --button-bg-dark: #fff;
+      --button-text-light: #fff;
+      --button-text-dark: #333;
+      --shape-color-light: rgba(0, 0, 0, 0.7);
+      --shape-color-dark: rgba(255, 255, 255, 0.8);
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color-light);
+      color: var(--text-color-light);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .timer-container {
+      text-align: center;
+      padding: 20px;
+      background: var(--box-color-light);
+      border-radius: 20px;
+      box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.2);
+      transition: background 0.3s ease;
+      z-index: 1;
+    }
+
+    .timer-container h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    .timer-container p {
+      font-size: 1.5rem;
+      margin: 5px 0;
+    }
+
+    .timer-container p span {
+      font-weight: bold;
+    }
+
+    .theme-toggle,
+    .time-toggle {
+      position: absolute;
+      top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      background: var(--button-bg-light);
+      color: var(--button-text-light);
+      cursor: pointer;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .theme-toggle {
+      right: 20px;
+    }
+
+    .time-toggle {
+      left: 20px;
+    }
+
+    footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1rem;
+      color: var(--text-color-light);
+      transition: color 0.3s ease;
+    }
+
+    footer a {
+      text-decoration: none;
+      color: var(--text-color-light);
+      font-weight: bold;
+      transition: color 0.3s ease;
+    }
+
+    footer a:hover {
+      color: #007bff;
+    }
+
+    body.dark {
+      background: var(--bg-color-dark);
+      color: var(--text-color-dark);
+    }
+
+    body.dark .timer-container {
+      background: var(--box-color-dark);
+    }
+
+    body.dark .theme-toggle,
+    body.dark .time-toggle {
+      background: var(--button-bg-dark);
+      color: var(--button-text-dark);
+    }
+
+    body.dark footer {
+      color: var(--text-color-dark);
+    }
+
+    body.dark footer a {
+      color: var(--text-color-dark);
+    }
+
+    body.dark footer a:hover {
+      color: #66d9ff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Таймер -->
+  <div class="timer-container">
+    <h1>Обратный отсчёт до лета</h1>
+    <p><span id="months">0</span> месяцев</p>
+    <p><span id="weeks">0</span> недель</p>
+    <p><span id="days">0</span> дней</p>
+    <p><span id="hours">0</span> часов</p>
+    <p><span id="minutes">0</span> минут</p>
+    <p><span id="seconds">0</span> секунд</p>
+  </div>
+
+  <!-- Кнопки -->
+  <button class="theme-toggle" id="theme-toggle">Сменить тему</button>
+  <button class="time-toggle" id="time-toggle">Чистое время</button>
+
+  <!-- Footer с авторскими правами и рекламой -->
+  <footer>
+    <p>© 2025 PROkachka Studio. Все права защищены.</p>
+    <p>Создано при поддержке Telegram-канала <a href="https://t.me/PROkachka_Studios" target="_blank">"Жизнь программиста"</a>.</p>
+    <p>Подпишись на <a href="https://t.me/PROkachka_Studios" target="_blank">лучшие мемы о программировании!</a></p>
+  </footer>
+
+  <script>
+    let useCleanTime = false;
+
+    function getCorrectForm(number, forms) {
+      if (number % 100 >= 11 && number % 100 <= 19) {
+        return forms[2];
+      }
+      const lastDigit = number % 10;
+      if (lastDigit === 1) return forms[0];
+      if (lastDigit >= 2 && lastDigit <= 4) return forms[1];
+      return forms[2];
+    }
+
+    function updateTimer() {
+      const now = new Date();
+      const summerStart = new Date(now.getFullYear(), 5, 1, 0, 0, 0); // 1 июня
+      const timeDiff = summerStart - now;
+
+      if (timeDiff <= 0) {
+        document.querySelector('.timer-container').innerHTML = "<h1>Лето уже началось!</h1>";
+        return;
+      }
+
+      const totalSeconds = Math.floor(timeDiff / 1000);
+
+      if (useCleanTime) {
+        // Чистое время
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        const totalHours = Math.floor(totalMinutes / 60);
+        const totalDays = Math.floor(totalHours / 24);
+        const totalWeeks = Math.floor(totalDays / 7);
+        const totalMonths = Math.floor(totalWeeks / 4);
+
+        document.getElementById("months").textContent = totalMonths;
+        document.getElementById("months").nextSibling.textContent = ` ${getCorrectForm(totalMonths, ['месяц', 'месяца', 'месяцев'])}`;
+        document.getElementById("weeks").textContent = totalWeeks;
+        document.getElementById("weeks").nextSibling.textContent = ` ${getCorrectForm(totalWeeks, ['неделя', 'недели', 'недель'])}`;
+        document.getElementById("days").textContent = totalDays;
+        document.getElementById("days").nextSibling.textContent = ` ${getCorrectForm(totalDays, ['день', 'дня', 'дней'])}`;
+        document.getElementById("hours").textContent = totalHours;
+        document.getElementById("hours").nextSibling.textContent = ` ${getCorrectForm(totalHours, ['час', 'часа', 'часов'])}`;
+        document.getElementById("minutes").textContent = totalMinutes;
+        document.getElementById("minutes").nextSibling.textContent = ` ${getCorrectForm(totalMinutes, ['минута', 'минуты', 'минут'])}`;
+        document.getElementById("seconds").textContent = totalSeconds;
+        document.getElementById("seconds").nextSibling.textContent = ` ${getCorrectForm(totalSeconds, ['секунда', 'секунды', 'секунд'])}`;
+      } else {
+        // Стандартное время
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        const totalHours = Math.floor(totalMinutes / 60);
+        const totalDays = Math.floor(totalHours / 24);
+        const totalWeeks = Math.floor(totalDays / 7);
+        const months = Math.floor(totalWeeks / 4);
+
+        const weeks = totalWeeks % 4;
+        const days = totalDays % 7;
+        const hours = totalHours % 24;
+        const minutes = totalMinutes % 60;
+        const seconds = totalSeconds % 60;
+
+        document.getElementById("months").textContent = months;
+        document.getElementById("months").nextSibling.textContent = ` ${getCorrectForm(months, ['месяц', 'месяца', 'месяцев'])}`;
+        document.getElementById("weeks").textContent = weeks;
+        document.getElementById("weeks").nextSibling.textContent = ` ${getCorrectForm(weeks, ['неделя', 'недели', 'недель'])}`;
+        document.getElementById("days").textContent = days;
+        document.getElementById("days").nextSibling.textContent = ` ${getCorrectForm(days, ['день', 'дня', 'дней'])}`;
+        document.getElementById("hours").textContent = hours;
+        document.getElementById("hours").nextSibling.textContent = ` ${getCorrectForm(hours, ['час', 'часа', 'часов'])}`;
+        document.getElementById("minutes").textContent = minutes;
+        document.getElementById("minutes").nextSibling.textContent = ` ${getCorrectForm(minutes, ['минута', 'минуты', 'минут'])}`;
+        document.getElementById("seconds").textContent = seconds;
+        document.getElementById("seconds").nextSibling.textContent = ` ${getCorrectForm(seconds, ['секунда', 'секунды', 'секунд'])}`;
+      }
+    }
+
+    function toggleTheme() {
+      const body = document.body;
+      body.classList.toggle('dark');
+    }
+
+    function toggleTimeFormat() {
+      useCleanTime = !useCleanTime;
+      updateTimer();
+    }
+
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    document.getElementById('time-toggle').addEventListener('click', toggleTimeFormat);
+
+    setInterval(updateTimer, 1000);
+    updateTimer(); // Запуск при загрузке страницы
+  </script>
+</body>
+</html>
